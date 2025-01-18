@@ -1,67 +1,59 @@
 'use client'
 import { Environment, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
-import { useMemo, useState } from "react";
-import { extend, type ThreeElement } from '@react-three/fiber'
-import { MeshBasicNodeMaterial, WebGPURenderer } from 'three/webgpu'
-import { mix, modelWorldMatrix, positionLocal, sin, timerLocal, uv, vec3, vec4 } from "three/tsl";
+import { useMemo } from "react";
+import { MeshPhysicalNodeMaterial, WebGPURenderer } from 'three/webgpu'
+import { distance, mix, modelWorldMatrix, positionLocal, sin, smoothstep, sub, time, uniform, uv, vec3, vec4 } from "three/tsl";
 
-extend({ MeshBasicNodeMaterial })
 
-declare module '@react-three/fiber' {
-  interface ThreeElements {
-    meshBasicNodeMaterial: ThreeElement<typeof MeshBasicNodeMaterial>
-  }
-}
 export default function Home() {
-  const [frameloop, setFrameloop] = useState<'never' | 'always'>('never')
 
+  const uniforms = useMemo(
+    () => ({
+      frequencyX: uniform(10),
+      frequencyY: uniform(10),
+    }),
+    []
+  );
   const customMaterial = useMemo(() => {
-    const material = new MeshBasicNodeMaterial();
-    const time = timerLocal(1);
+    const material = new MeshPhysicalNodeMaterial();
 
     // vertex
     const modelPosition = modelWorldMatrix.mul(vec4(positionLocal, 1));
-    const elevation = sin(modelPosition.x.mul(1).sub(time))
-      .mul(0.1)
-      .add(sin(modelPosition.z.mul(1).sub(time)).mul(0.1));
+    const elevation = sin(modelPosition.x.mul(uniforms.frequencyX).sub(time))
+      .mul(0.2)
+      .add(sin(modelPosition.z.mul(uniforms.frequencyY).sub(time)).mul(0.2))
+      .mul(smoothstep(3, 0, distance(modelPosition.xz, vec3(0, 0, 0))));
     material.positionNode = positionLocal.add(vec3(0, 0, elevation));
+    material.normalNode = vec3(elevation, 1.0, elevation).normalize();
 
     // fragment
-    const color1 = vec3(uv(), 1.0);
-    const color2 = vec3(1.0, uv());
-    material.colorNode = mix(color1, color2, sin(time).mul(0.5).add(0.5));
+    const color1 = vec3(uv(), sub(1, elevation));
+    const color2 = vec3(sub(1, elevation), uv());
+    material.colorNode = mix(color1, color2, 0.0);
+    material.colorNode = vec3(elevation.add(0.5).mul(0.4))
 
     return material;
-  }, []);
+  }, [uniforms]);
 
   return (
     <div className="bg-gray-800 w-full h-full" >
       <Canvas
-        orthographic
-        camera={{ position: [6, 5, 10], zoom: 60 }}
-        frameloop={frameloop}
-        flat
+        camera={{ position: [6, 5, 10], fov: 40 }}
         gl={(canvas) => {
           const renderer = new WebGPURenderer({
-            // @ts-expect-error whatever
-            canvas,
-            powerPreference: 'high-performance',
-            antialias: true,
-            alpha: true,
-          })
-          renderer.init().then(() => setFrameloop('always'))
-
-          return renderer
+            canvas: canvas as HTMLCanvasElement,
+          });
+          return renderer;
         }}
       >
         <color attach="background" args={['#fef4ef']} />
         <ambientLight />
-        <directionalLight castShadow intensity={0.6} position={[0, 1000, 1000]} />
+        <directionalLight castShadow intensity={1.6} position={[0, 1000, 1000]} />
         <mesh
           material={customMaterial}
           rotation-x={-Math.PI * 0.5}>
-          <planeGeometry args={[10, 10, 512, 512]} />
+          <boxGeometry args={[8, 8, 0.5, 512, 512, 512]} />
         </mesh>
         <OrbitControls makeDefault />
         <Environment preset="city" />
