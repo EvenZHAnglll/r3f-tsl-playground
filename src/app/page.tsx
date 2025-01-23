@@ -22,8 +22,9 @@ function createProceduralGeometry() {
   return geometry;
 }
 
-export default function Home() {
 
+// inspired by https://stackblitz.com/edit/tiny-tsl-example-mlxh7s?file=src%2FApp.tsx
+export default function Home() {
   const uniforms = useMemo(
     () => ({
       frequencyX: uniform(10),
