@@ -3,7 +3,7 @@ import { Environment, OrbitControls } from "@react-three/drei";
 import { Canvas } from "@react-three/fiber";
 import { useMemo } from "react";
 import { MeshPhysicalNodeMaterial, WebGPURenderer } from 'three/webgpu'
-import { cos, distance, float, mix, modelWorldMatrix, mul, positionLocal, sin, smoothstep, sub, time, uniform, uv, vec3, vec4 } from "three/tsl";
+import { cos, distance, float, mix, modelWorldMatrix, positionLocal, sin, smoothstep, sub, time, uniform, uv, vec3, vec4 } from "three/tsl";
 import { useControls } from "leva";
 
 
